@@ -5,12 +5,20 @@ console.log('+++ Fixing nodejs imports.\n');
 const fs = require('fs');
 const buffer = fs.readFileSync('./pkg/schnorrkel_js_bg.wasm');
 
-fs.writeFileSync('./pkg/schnorrkel_js_bg.js', `
-const imports = {};
-imports['./schnorrkel_js'] = require('./schnorrkel_js');
-const bytes = Buffer.from('${buffer.toString('base64')}', 'base64');
-const wasmModule = new WebAssembly.Module(bytes);
-const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
+fs.writeFileSync('./pkg/schnorrkel_js_wasm.js', `
+module.exports = Buffer.from('${buffer.toString('base64')}', 'base64');
+`);
 
-module.exports = wasmInstance.exports;
+fs.writeFileSync('./pkg/schnorrkel_js_bg.js', `
+const bytes = require('./schnorrkel_js_wasm.js');
+
+module.exports = function createExportPromise (wasmImports) {
+  const imports = {
+    './schnorrkel_js': wasmImports
+  };
+
+  return WebAssembly
+    .instantiate(bytes, imports)
+    .then((wasm) => wasm.instance.exports);
+}
 `);
