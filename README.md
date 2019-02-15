@@ -1,6 +1,6 @@
 # @polkadot/schnorrkel-js
 
-A fork of [@parity/schnorrkel-js][https://github.com/paritytech/schnorrkel-js] that allows proper operation against all the environments that the `@polkadot/api` supports
+A fork of [@parity/schnorrkel-js](https://github.com/paritytech/schnorrkel-js) that allows proper operation against all the environments that the `@polkadot/api` supports
 
 # Schnorrkel-js
 
