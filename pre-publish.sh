@@ -25,6 +25,7 @@ sed -i -e 's/schnorrkel-js/@polkadot\/schnorrkel-js/g' $PKG
 sed -i -e 's/schnorrkel_js_bg\.wasm/schnorrkel_js_wasm\.js/g' $PKG
 
 # we do not want the __ imports (used by WASM) to clutter up the exports, these are internal
+sed -i -e 's/var wasm;/let wasm; const wasmImports = {};/g' $SRC
 sed -i -e 's/module\.exports\.__/wasmImports\.__/g' $SRC
 
 # this creates issues in both the browser and RN (@polkadot/util has a polyfill)
