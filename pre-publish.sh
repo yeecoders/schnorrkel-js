@@ -46,9 +46,9 @@ echo "
 const wasmPromise = createPromise(wasmImports);
 
 module.exports.isReady = function () { return !!wasm; }
-module.exports.waitReady = function () { return wasmPromise.then(() => true); }
+module.exports.waitReady = function () { return wasmPromise.then(() => !!wasm); }
 
-wasmPromise.then((_wasm) => { wasm = _wasm });
+wasmPromise.then((_wasm) => { wasm = _wasm }).catch(() => {});
 " >> $SRC
 
 # add extra methods to type definitions
