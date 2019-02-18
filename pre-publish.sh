@@ -43,10 +43,10 @@ sed -i -e 's/return addHeapObject(require(varg0));/throw new Error(`Invalid requ
 
 # construct our promise and add ready helpers
 echo "
-const wasmPromise = createPromise(wasmImports);
+const wasmPromise = createPromise(wasmImports).catch(() => null);
 
 module.exports.isReady = function () { return !!wasm; }
-module.exports.waitReady = function () { return wasmPromise.then(() => true); }
+module.exports.waitReady = function () { return wasmPromise.then(() => !!wasm); }
 
 wasmPromise.then((_wasm) => { wasm = _wasm });
 " >> $SRC
