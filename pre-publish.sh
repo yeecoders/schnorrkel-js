@@ -29,7 +29,7 @@ wasm-pack build --target nodejs
 rustup default stable
 
 # build asmjs version from
-binaryen/bin/wasm2js --pedantic --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
+binaryen/bin/wasm2js --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
 
 # convert wasm to base64 structure
 ./pack-node.sh
@@ -73,7 +73,7 @@ sed -i -e 's/cachedTextDecoder\.decode/u8aToString/g' $SRC
 sed -i -e 's/wasm = require/const createPromise = require/g' $SRC
 
 # this we don't allow, we don't have an actual call into this and creates webpack warnings
-sed -i -e 's/return addHeapObject(require(varg0));/throw new Error(`Invalid require from WASM for ${varg0}`);/g' $SRC
+# sed -i -e 's/return addHeapObject(require(varg0));/throw new Error(`Invalid require from WASM for ${varg0}`);/g' $SRC
 
 # construct our promise and add ready helpers
 echo "
@@ -93,7 +93,7 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-const asm = require('./schnnorrkel_js_asm');
+const asm = require('./schnorrkel_js_asm');
 const wasm = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
 
