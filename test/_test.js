@@ -1,4 +1,5 @@
 // @ts-check
+const crypto = require('crypto');
 const { assert, stringToU8a, u8aToHex } = require('@polkadot/util');
 const schnorrkel = require('../pkg/index');
 
@@ -23,8 +24,10 @@ async function pairFromSeed () {
 }
 
 async function signAndVerify () {
-  const SEED = stringToU8a('12345678901234567890121234567890');
+  const SEED = new Uint8Array(32);
   const MESSAGE = stringToU8a('this is a message');
+
+  crypto.randomFillSync(SEED);
 
   const pair = schnorrkel.keypair_from_seed(SEED);
   const pk = pair.slice(64);
