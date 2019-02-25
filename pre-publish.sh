@@ -25,11 +25,11 @@ rm -rf ./pkg
 
 # build new via nightly & wasm-pack
 rustup default nightly
-wasm-pack build --target nodejs
+wasm-pack build --release --scope polkadot --target nodejs
 rustup default stable
 
 # build asmjs version from
-binaryen/bin/wasm2js --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
+binaryen/bin/wasm2js --enable-mutable-globals --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
 
 # convert wasm to base64 structure
 ./pack-node.sh
@@ -44,9 +44,6 @@ DEF=pkg/schnorrkel_js.d.ts
 ASM=pkg/schnorrkel_js_asm.js
 PKG=pkg/package.json
 
-# Fix the name in package.json
-sed -i -e 's/schnorrkel-js/@polkadot\/schnorrkel-js/g' $PKG
-
 # update the files (new addition)
 sed -i -e 's/schnorrkel_js_bg\.wasm/schnorrkel_js_wasm\.js", "schnorrkel_js_asm\.js", "index\.js", "index\.d\.ts/g' $PKG
 sed -i -e 's/"main": "schnorrkel_js\.js"/"main": "index\.js"/g' $PKG
@@ -58,9 +55,8 @@ sed -i -e 's/} from /} = require(/g' $ASM
 sed -i -e 's/\.\/schnorrkel_js'\''/\.\/schnorrkel_js'\'')/g' $ASM
 sed -i -e 's/export const /module\.exports\./g' $ASM
 
-# we do not want the __ imports (used by WASM) to clutter up the exports, these are internal
-# sed -i -e 's/var wasm;/let wasm; const wasmImports = {};/g' $SRC
-# sed -i -e 's/module\.exports\.__/wasmImports\.__/g' $SRC
+# we do not want the __ imports (used by WASM) to clutter up
+sed -i -e 's/var wasm;/const crypto = require('\''crypto'\''); let wasm; const requires = { crypto };/g' $SRC
 
 # this creates issues in both the browser and RN (@polkadot/util has a polyfill)
 sed -i -e 's/const TextDecoder = require('\''util'\'')\.TextDecoder;/const { u8aToString } = require('\''@polkadot\/util'\'');/g' $SRC
@@ -69,10 +65,11 @@ sed -i -e 's/const TextDecoder = require('\''util'\'')\.TextDecoder;/const { u8a
 sed -i -e 's/let cachedTextDecoder = new /\/\/ let cachedTextDecoder = new /g' $SRC
 sed -i -e 's/cachedTextDecoder\.decode/u8aToString/g' $SRC
 
-# we are swapping to a async interface, don't do this
+# we are swapping to a async interface for webpack support (wasm limits)
 sed -i -e 's/wasm = require/const createPromise = require/g' $SRC
 
-# this we don't allow, we don't have an actual call into this and creates webpack warnings
+# pull the requires from the imports and the `requires` object
+sed -i -e 's/return addHeapObject(require(varg0));/return addHeapObject(requires[varg0]);/g' $SRC
 # sed -i -e 's/return addHeapObject(require(varg0));/throw new Error(`Invalid require from WASM for ${varg0}`);/g' $SRC
 
 # construct our promise and add ready helpers
@@ -93,9 +90,11 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-const asm = require('./schnorrkel_js_asm');
+// const asm = require('./schnorrkel_js_asm');
 const wasm = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
+
+const FALLBACK = null; // asm
 
 module.exports = async function createExportPromise () {
   const imports = {
@@ -103,7 +102,7 @@ module.exports = async function createExportPromise () {
   };
 
   if (!WebAssembly) {
-    return asm; // null
+    return FALLBACK;
   }
 
   try {
@@ -111,7 +110,7 @@ module.exports = async function createExportPromise () {
 
     return instance.exports;
   } catch (error) {
-    return asm; // null
+    return FALLBACK;
   }
 }
 " > $INT

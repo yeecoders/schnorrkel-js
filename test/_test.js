@@ -18,9 +18,11 @@ async function pairFromSeed () {
 
   const pair = schnorrkel.keypair_from_seed(SEED);
 
-  console.error('pair', u8aToHex(pair.slice(0, 64)), u8aToHex(pair.slice(64)));
+  console.error('keypair_from_seed');
+  console.log('\t', u8aToHex(pair.slice(0, 64)));
+  console.log('\t', u8aToHex(pair.slice(64)));
 
-  assert(u8aToHex(pair) === u8aToHex(PAIR), 'pairFromSeed() does not match')
+  assert(u8aToHex(pair) === u8aToHex(PAIR), 'ERROR: pairFromSeed() does not match')
 }
 
 async function signAndVerify () {
@@ -34,9 +36,10 @@ async function signAndVerify () {
   const sk = pair.slice(0, 64);
   const signature = schnorrkel.sign(pk, sk, MESSAGE);
 
-  console.error('signature', u8aToHex(signature));
+  console.error('sign');
+  console.log('\t', u8aToHex(signature));
 
-  assert(schnorrkel.verify(signature, MESSAGE, pk) === true, 'Unable to verify signature');
+  assert(schnorrkel.verify(signature, MESSAGE, pk) === true, 'ERROR: Unable to verify signature');
 }
 
 (async () => {
