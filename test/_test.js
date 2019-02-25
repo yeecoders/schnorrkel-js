@@ -3,11 +3,33 @@ const crypto = require('crypto');
 const { assert, hexToU8a, stringToU8a, u8aToHex } = require('@polkadot/util');
 const schnorrkel = require('../pkg/index');
 
+function extractKeys (pair) {
+  const pk = pair.slice(64);
+  const sk = pair.slice(0, 64);
+
+  return [pk, sk];
+}
+
+function randomPair () {
+  const seed = new Uint8Array(32);
+
+  crypto.randomFillSync(seed);
+
+  return schnorrkel.keypair_from_seed(seed);
+}
+
+function randomKeys () {
+  return extractKeys(randomPair());
+}
+
 async function beforeAll () {
   return schnorrkel.waitReady();
 }
 
 async function pairFromSeed () {
+  console.time('pairFromSeed');
+  console.log();
+
   const SEED = stringToU8a('12345678901234567890123456789012');
   const PAIR = hexToU8a(
     '0x' +
@@ -20,14 +42,19 @@ async function pairFromSeed () {
 
   const pair = schnorrkel.keypair_from_seed(SEED);
 
-  console.error('keypair_from_seed (known)');
+  console.error('pairFromSeed');
   console.log('\t', u8aToHex(pair.slice(0, 64)));
   console.log('\t', u8aToHex(pair.slice(64)));
 
-  assert(u8aToHex(pair) === u8aToHex(PAIR), 'ERROR: pairFromSeed() does not match')
+  assert(u8aToHex(pair) === u8aToHex(PAIR), 'ERROR: pairFromSeed() does not match');
+
+  console.timeEnd('pairFromSeed');
 }
 
 async function verifyExisting () {
+  console.time('verifyExisting');
+  console.log();
+
   const PK = hexToU8a('0x741c08a06f41c596608f6774259bd9043304adfa5d3eea62760bd9be97634d63');
   const MESSAGE = stringToU8a('this is a message');
   const SIGNATURE = hexToU8a(
@@ -38,29 +65,62 @@ async function verifyExisting () {
 
   const isValid = schnorrkel.verify(SIGNATURE, MESSAGE, PK);
 
-  console.error('verify (exiting, known)');
+  console.error('verifyExisting');
   console.log('\t', isValid);
 
-  assert(isValid, 'ERROR: Unble to verify existing signature');
+  assert(isValid, 'ERROR: Unable to verify existing signature');
+
+  console.timeEnd('verifyExisting');
 }
 
 async function signAndVerify () {
-  const SEED = new Uint8Array(32);
+  console.time('signAndVerify');
+  console.log();
+
   const MESSAGE = stringToU8a('this is a message');
 
-  crypto.randomFillSync(SEED);
-
-  const pair = schnorrkel.keypair_from_seed(SEED);
-  const pk = pair.slice(64);
-  const sk = pair.slice(0, 64);
+  const [pk, sk] = randomKeys();
   const signature = schnorrkel.sign(pk, sk, MESSAGE);
   const isValid = schnorrkel.verify(signature, MESSAGE, pk);
 
-  console.error('sign & verify (random)');
+  console.error('signAndVerify');
   console.log('\t', u8aToHex(signature));
   console.log('\t', isValid);
 
   assert(isValid, 'ERROR: Unable to verify new random signature');
+
+  console.timeEnd('signAndVerify');
+}
+
+async function benchCreate () {
+  console.time('benchCreate');
+  console.log();
+
+  for (let i = 0; i < 256; i++) {
+    const pair = randomPair();
+
+    assert(pair.length === 96, 'ERROR: Invalid pair created');
+  }
+
+  console.timeEnd('benchCreate');
+}
+
+async function benchVerify () {
+  console.time('benchVerify');
+  console.log();
+
+  const MESSAGE = stringToU8a('this is a message');
+
+  for (let i = 0; i < 256; i++) {
+    const [pk, sk] = randomKeys();
+
+    const signature = schnorrkel.sign(pk, sk, MESSAGE);
+    const isValid = schnorrkel.verify(signature, MESSAGE, pk);
+
+    assert(isValid, 'ERROR: Unable to verify signature');
+  }
+
+  console.timeEnd('benchVerify');
 }
 
 (async () => {
@@ -68,4 +128,6 @@ async function signAndVerify () {
   await pairFromSeed();
   await verifyExisting();
   await signAndVerify();
+  await benchCreate();
+  await benchVerify();
 })().catch(console.log).finally(() => process.exit());

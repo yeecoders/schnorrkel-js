@@ -33,15 +33,13 @@ fi
 rm -rf ./pkg
 
 # build new via nightly & wasm-pack
-rustup default nightly
-wasm-pack build --release --scope polkadot --target nodejs
-rustup default stable
+rustup run nightly wasm-pack build --release --scope polkadot --target nodejs
 
 # optimise
 binaryen/bin/wasm-opt pkg/schnorrkel_js_bg.wasm -Os -o pkg/schnorrkel_js_opt.wasm
 
 # build asmjs version from
-binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
+binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_opt.wasm
 
 # convert wasm to base64 structure
 ./pack-node.sh
@@ -102,11 +100,9 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-// const asm = require('./schnorrkel_js_asm');
+const FALLBACK = require('./schnorrkel_js_asm');
 const wasm = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
-
-const FALLBACK = null; // asm;
 
 module.exports = async function createExportPromise () {
   const imports = {
