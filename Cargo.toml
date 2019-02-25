@@ -1,6 +1,6 @@
 [package]
 name = "schnorrkel-js"
-version = "0.1.2-2"
+version = "0.1.2-3"
 authors = ["kianenigma <Kian.peymani@gmail.com>"]
 edition = "2018"
 
@@ -15,3 +15,6 @@ schnorrkel = { version = "0.0", features = ["nightly"]}
 
 [dev-dependencies]
 rand = { version = "0.6.5", features = ["wasm-bindgen"] }
+
+[profile.release]
+lto = true

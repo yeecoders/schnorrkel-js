@@ -16,7 +16,16 @@ fi
 # build wasm2js as required
 if [ ! -f "binaryen/bin/wasm2js" ]; then
   cd binaryen
-  cmake . && make wasm2js
+  cmake .
+  make wasm2js
+  cd ..
+fi
+
+# build wasm-opt as required
+if [ ! -f "binaryen/bin/wasm-opt" ]; then
+  cd binaryen
+  cmake .
+  make wasm-opt
   cd ..
 fi
 
@@ -28,8 +37,11 @@ rustup default nightly
 wasm-pack build --release --scope polkadot --target nodejs
 rustup default stable
 
+# optimise
+binaryen/bin/wasm-opt pkg/schnorrkel_js_bg.wasm -Os -o pkg/schnorrkel_js_opt.wasm
+
 # build asmjs version from
-binaryen/bin/wasm2js --enable-mutable-globals --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
+binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_opt.wasm
 
 # convert wasm to base64 structure
 ./pack-node.sh
@@ -94,7 +106,7 @@ echo "
 const wasm = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
 
-const FALLBACK = null; // asm
+const FALLBACK = asm; // null
 
 module.exports = async function createExportPromise () {
   const imports = {
