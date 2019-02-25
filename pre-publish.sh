@@ -41,7 +41,7 @@ rustup default stable
 binaryen/bin/wasm-opt pkg/schnorrkel_js_bg.wasm -Os -o pkg/schnorrkel_js_opt.wasm
 
 # build asmjs version from
-binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_opt.wasm
+binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_asm.js pkg/schnorrkel_js_bg.wasm
 
 # convert wasm to base64 structure
 ./pack-node.sh
@@ -106,7 +106,7 @@ echo "
 const wasm = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
 
-const FALLBACK = asm; // null
+const FALLBACK = null; // asm;
 
 module.exports = async function createExportPromise () {
   const imports = {
