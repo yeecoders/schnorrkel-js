@@ -7,19 +7,16 @@ function extractKeys (pair) {
   const pk = pair.slice(64);
   const sk = pair.slice(0, 64);
 
-  return [pk, sk];
+  return [pair, pk, sk];
 }
 
 function randomPair () {
-  const seed = new Uint8Array(32);
+  const seed = crypto.randomBytes(32);
+  const pair = schnorrkel.keypair_from_seed(seed);
 
-  crypto.randomFillSync(seed);
+  assert(pair.length === 96, 'ERROR: Invalid pair created');
 
-  return schnorrkel.keypair_from_seed(seed);
-}
-
-function randomKeys () {
-  return extractKeys(randomPair());
+  return extractKeys(pair);
 }
 
 async function beforeAll () {
@@ -68,7 +65,7 @@ async function verifyExisting () {
   console.error('verifyExisting');
   console.log('\t', isValid);
 
-  assert(isValid, 'ERROR: Unable to verify existing signature');
+  assert(isValid, 'ERROR: Unable to verify signature');
 
   console.timeEnd('verifyExisting');
 }
@@ -79,7 +76,7 @@ async function signAndVerify () {
 
   const MESSAGE = stringToU8a('this is a message');
 
-  const [pk, sk] = randomKeys();
+  const [, pk, sk] = randomPair();
   const signature = schnorrkel.sign(pk, sk, MESSAGE);
   const isValid = schnorrkel.verify(signature, MESSAGE, pk);
 
@@ -87,32 +84,19 @@ async function signAndVerify () {
   console.log('\t', u8aToHex(signature));
   console.log('\t', isValid);
 
-  assert(isValid, 'ERROR: Unable to verify new random signature');
+  assert(isValid, 'ERROR: Unable to verify signature');
 
   console.timeEnd('signAndVerify');
 }
 
-async function benchCreate () {
-  console.time('benchCreate');
-  console.log();
-
-  for (let i = 0; i < 256; i++) {
-    const pair = randomPair();
-
-    assert(pair.length === 96, 'ERROR: Invalid pair created');
-  }
-
-  console.timeEnd('benchCreate');
-}
-
-async function benchVerify () {
-  console.time('benchVerify');
+async function benchmark () {
+  console.time('benchmark');
   console.log();
 
   const MESSAGE = stringToU8a('this is a message');
 
   for (let i = 0; i < 256; i++) {
-    const [pk, sk] = randomKeys();
+    const [, pk, sk] = randomPair();
 
     const signature = schnorrkel.sign(pk, sk, MESSAGE);
     const isValid = schnorrkel.verify(signature, MESSAGE, pk);
@@ -120,7 +104,7 @@ async function benchVerify () {
     assert(isValid, 'ERROR: Unable to verify signature');
   }
 
-  console.timeEnd('benchVerify');
+  console.timeEnd('benchmark');
 }
 
 (async () => {
@@ -128,6 +112,5 @@ async function benchVerify () {
   await pairFromSeed();
   await verifyExisting();
   await signAndVerify();
-  await benchCreate();
-  await benchVerify();
+  await benchmark();
 })().catch(console.log).finally(() => process.exit());
