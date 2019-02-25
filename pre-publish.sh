@@ -15,6 +15,7 @@ fi
 
 # build wasm2js as required
 if [ ! -f "binaryen/bin/wasm2js" ]; then
+  echo "*** Building wasm2js"
   cd binaryen
   cmake .
   make wasm2js
@@ -23,6 +24,7 @@ fi
 
 # build wasm-opt as required
 if [ ! -f "binaryen/bin/wasm-opt" ]; then
+  echo "*** Building wasm-opt"
   cd binaryen
   cmake .
   make wasm-opt
@@ -30,43 +32,53 @@ if [ ! -f "binaryen/bin/wasm-opt" ]; then
 fi
 
 # install deps
+echo "*** Installing JS dependencies"
 yarn
 
 # cleanup old
+echo "*** Claning old builds"
 rm -rf ./pkg
 
 # build new via nightly & wasm-pack
+echo "*** Building WASM output"
 rustup run nightly wasm-pack build --release --scope polkadot --target nodejs
 
 # optimise
+echo "*** Optimising WASM output"
 binaryen/bin/wasm-opt pkg/schnorrkel_js_bg.wasm -Os -o pkg/schnorrkel_js_opt.wasm
 
 # build asmjs version from the input (optimised) WASM
+echo "*** Building asm.js version"
 binaryen/bin/wasm2js --no-validation --output pkg/schnorrkel_js_temp.js pkg/schnorrkel_js_bg.wasm
 
 # convert wasm to base64 structure
+echo "*** Packing WASM into base64"
 ./pack-node.sh
 
 # copy our package interfaces
+echo "*** Copying package sources"
 cp src/js/* pkg/
 
 # shortcuts for files
-INT=pkg/schnorrkel_js_bg.js
+echo "*** Adjusting output"
+BGJ=pkg/schnorrkel_js_bg.js
 SRC=pkg/schnorrkel_js.js
 DEF=pkg/schnorrkel_js.d.ts
-ASM=pkg/schnorrkel_js_temp.js
+TMP=pkg/schnorrkel_js_temp.js
+ASM=pkg/schnorrkel_js_asm.js
 PKG=pkg/package.json
 
 # update the files (new addition)
-sed -i -e 's/schnorrkel_js_bg\.wasm/schnorrkel_js_wasm\.js", "schnorrkel_js_asm\.js", "index\.js", "index\.d\.ts/g' $PKG
+# excluded: "schnorrkel_js_asm\.js",
+sed -i -e 's/schnorrkel_js_bg\.wasm/schnorrkel_js_wasm\.js", "index\.js", "index\.d\.ts/g' $PKG
 sed -i -e 's/"main": "schnorrkel_js\.js"/"main": "index\.js"/g' $PKG
 sed -i -e 's/"types": "schnorrkel_js\.d\.ts"/"types": "index\.d\.ts"/g' $PKG
 
 # cleanup asm
-sed -i -e 's/import {/\/\/ import {/g' $ASM
-sed -i -e 's/function asmFunc/var schnorrkel = require('\''\.\/schnorrkel_js'\''); function asmFunc/g' $ASM
-sed -i -e 's/export const /module\.exports\./g' $ASM
-sed -i -e 's/{abort.*},memasmFunc/schnorrkel, memasmFunc/g' $ASM
+sed -i -e 's/import {/\/\/ import {/g' $TMP
+sed -i -e 's/function asmFunc/var schnorrkel = require('\''\.\/schnorrkel_js'\''); function asmFunc/g' $TMP
+sed -i -e 's/export const /module\.exports\./g' $TMP
+sed -i -e 's/{abort.*},memasmFunc/schnorrkel, memasmFunc/g' $TMP
 
 # we do not want the __ imports (used by WASM) to clutter up
 sed -i -e 's/var wasm;/const crypto = require('\''crypto'\''); let wasm; const requires = { crypto };/g' $SRC
@@ -106,8 +118,8 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-const FALLBACK = require('./schnorrkel_js_asm');
-const wasm = require('./schnorrkel_js_wasm');
+const asm = null; // require('./schnorrkel_js_asm');
+const bytes = require('./schnorrkel_js_wasm');
 const schnorrkel = require('./schnorrkel_js');
 
 module.exports = async function createExportPromise () {
@@ -116,21 +128,24 @@ module.exports = async function createExportPromise () {
   };
 
   if (!WebAssembly) {
-    return FALLBACK;
+    return asm;
   }
 
   try {
-    const { instance } = await WebAssembly.instantiate(wasm, imports);
+    const { instance } = await WebAssembly.instantiate(bytes, imports);
 
     return instance.exports;
   } catch (error) {
-    return FALLBACK;
+    return asm;
   }
 }
-" > $INT
+" > $BGJ
 
 # cleanup in-place sed files
-rm -rf *-e
+echo "*** Cleaning up in-place edits"
+rm -rf pkg/*-e
 
 # pass through uglify to make the actual output smaller
-yarn run uglifyjs pkg/schnorrkel_js_temp.js --compress --mangle --timings --ouput pkg/schnorrkel_js_asm.js
+# echo "*** Optimising asm.js output"
+# yarn run uglifyjs $TMP --compress --mangle --timings --output $ASM
+mv $TMP $ASM

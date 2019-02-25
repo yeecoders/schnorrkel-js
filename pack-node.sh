@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-console.log('+++ Fixing nodejs imports.\n');
-
 const fs = require('fs');
 const buffer = fs.readFileSync('./pkg/schnorrkel_js_opt.wasm');
 
