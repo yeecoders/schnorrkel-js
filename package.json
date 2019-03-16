@@ -2,11 +2,12 @@
   "name": "@polkadot/schnorrkel-js",
   "private": true,
   "collaborators": [
-    "kianenigma <Kian.peymani@gmail.com>"
+    "kianenigma <Kian.peymani@gmail.com>",
+    "Jaco Greeff <jacogr@gmail.com>"
   ],
-  "version": "0.2.0-3",
+  "version": "0.2.0-10",
   "devDependencies": {
-    "@polkadot/util": "^0.38.0-beta.1",
-    "uglify-es": "^3.3.9"
+    "@polkadot/dev": "^0.27.1",
+    "@polkadot/util": "*"
   }
 }
