@@ -12,6 +12,7 @@ A fork of [@parity/schnorrkel-js](https://github.com/paritytech/schnorrkel-js) t
 - Extensive code cleanups and addition of functions required for all sr25519 operations
 - Extended tests to cover Rust, wasm (via Node) and wasm (via jest), remove (here unused) www interfaces
 - Attempt at asm.js support (not active, commented in build.sh)
+- Output WASM size dropped from 480k down to 211k (allocation, crate type, unneeded copy constructs)
 
 ## development
 
