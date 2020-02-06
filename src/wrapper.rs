@@ -1,6 +1,6 @@
 
 use schnorrkel::keys::*;
-use schnorrkel::context::{signing_context}; 
+use schnorrkel::context::{signing_context};
 use schnorrkel::sign::{Signature,SIGNATURE_LENGTH};
 
 use sha2::Sha512;
@@ -53,7 +53,15 @@ pub fn __sign(public: &[u8], private: &[u8], message: &[u8]) -> [u8; SIGNATURE_L
 		Ok(some_public) => some_public,
 		Err(_) => panic!("Provided public key is invalid.")
 	};
-	
+
 	let context = signing_context(SIGNING_CTX);
 	secret.sign(context.bytes(message), &public).to_bytes()
+}
+pub fn __to_public(private: &[u8]) -> [u8; PUBLIC_KEY_LENGTH] {
+	// despite being a method of KeyPair, only the secret is used for signing.
+	let secret = match SecretKey::from_bytes(private) {
+		Ok(some_secret) => some_secret,
+		Err(_) => panic!("Provided private key is invalid.")
+	};
+	secret.to_public().to_bytes()
 }

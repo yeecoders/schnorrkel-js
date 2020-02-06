@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 wasm-bindgen = { version = "0.2" }
 wasm-bindgen-test = { version = "0.2" }
 sha2 = { version = "0.8"}
-schnorrkel = { version = "0.0", features = ["nightly"]}
-
+schnorrkel = { version = "0.1.1"}
+ed25519-dalek = { version = "1.0.0-pre.1"}
 [dev-dependencies]
 rand = { version = "0.6.5", features = ["wasm-bindgen"] }
