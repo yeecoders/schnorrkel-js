@@ -155,6 +155,16 @@ async function deriveSoftPubkey () {
   assert(derived === DERIVED, 'Unmatched resulting public keys');
 }
 
+async function toPublic() {
+  const secret = hexToU8a('0xa0a4b130fbaa4fde721f54f9a9d2c7db66bb1769dc418b693e1ee71b1981976f0ccd2870d60cc51f77b7240bcfaf0db5cab3d3fea2f24778fbd3580e8cc5095d');
+  const exprected_secret = "0xd2c8b168bdf65946252f567d10a6d943139a87b69bdf82973cf2b8bf7d10543f";
+  const public_key = u8aToHex(schnorrkel.toPublic(secret));
+
+  console.log('\tPUB', public_key);
+
+  assert(public_key === exprected_secret, 'Unmatched resulting public keys');
+}
+
 async function benchmark () {
   const MESSAGE = stringToU8a('this is a message');
 
@@ -178,6 +188,7 @@ const tests = {
   deriveSoftPubkey,
   signAndVerify,
   verifyExisting,
+  toPublic,
   benchmark
 };
 

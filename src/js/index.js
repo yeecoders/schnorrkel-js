@@ -8,4 +8,5 @@ module.exports.isReady = stubbed.isReady;
 module.exports.keypairFromSeed = stubbed.keypair_from_seed;
 module.exports.sign = stubbed.sign;
 module.exports.verify = stubbed.verify;
+module.exports.toPublic = stubbed.to_public;
 module.exports.waitReady = stubbed.waitReady;

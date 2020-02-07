@@ -5,6 +5,7 @@ extern crate schnorrkel;
 use schnorrkel::{
 	Keypair, MiniSecretKey, PublicKey, SecretKey, Signature,
 	derive::{Derivation, ChainCode, CHAIN_CODE_LENGTH},
+	PUBLIC_KEY_LENGTH,
 };
 use wasm_bindgen::prelude::*;
 
@@ -54,6 +55,14 @@ fn create_secret(secret: &[u8]) -> SecretKey {
 		Ok(secret) => return secret,
 		Err(_) => panic!("Provided private key is invalid.")
 	}
+}
+
+pub fn __to_public(secret: &[u8]) -> [u8; PUBLIC_KEY_LENGTH] {
+	let secret = match SecretKey::from_bytes(secret) {
+		Ok(some_secret) => some_secret,
+		Err(_) => panic!("Provided private key is invalid.")
+	};
+	secret.to_public().to_bytes()
 }
 
 /// Perform a derivation on a secret
@@ -109,6 +118,14 @@ pub fn keypair_from_seed(seed: &[u8]) -> Vec<u8> {
 	create_from_seed(seed)
 		.to_bytes()
 		.to_vec()
+}
+
+/// Generate a  public from private. .
+/// * private: UIntArray with 64 element
+/// returned vector is the  public key (32) bytes.
+#[wasm_bindgen]
+pub fn to_public(secret: &[u8]) -> Vec<u8> {
+	__to_public(secret).to_vec()
 }
 
 /// Sign a message
@@ -194,6 +211,8 @@ pub mod tests {
 		let keypair = keypair_from_seed(seed.as_slice());
 		let private = &keypair[0..SECRET_KEY_LENGTH];
 		let public = &keypair[SECRET_KEY_LENGTH..KEYPAIR_LENGTH];
+		println!("{:?}", private);
+		println!("{:?}", public);
 		let message = b"this is a message";
 		let signature = sign(public, private, message);
 
@@ -231,5 +250,14 @@ pub mod tests {
 		let public = &derived[SECRET_KEY_LENGTH..KEYPAIR_LENGTH];
 
 		assert_eq!(public, expected);
+	}
+
+	#[test]
+	fn can_to_public() {
+		let secret = hex!("a0a4b130fbaa4fde721f54f9a9d2c7db66bb1769dc418b693e1ee71b1981976f0ccd2870d60cc51f77b7240bcfaf0db5cab3d3fea2f24778fbd3580e8cc5095d");
+		let expected_public_key = hex!("d2c8b168bdf65946252f567d10a6d943139a87b69bdf82973cf2b8bf7d10543f");
+		let public_key = to_public(&secret);
+
+		assert_eq!(public_key, expected_public_key);
 	}
 }
