@@ -84,7 +84,7 @@ sed -i -e 's/"types": "schnorrkel_js\.d\.ts"/"types": "index\.d\.ts"/g' $PKG
 sed -i -e 's/var wasm;/const crypto = require('\''crypto'\''); let wasm; const requires = { crypto };/g' $SRC
 
 # this creates issues in both the browser and RN (@polkadot/util has a polyfill)
-sed -i -e 's/const TextDecoder = require('\''util'\'')\.TextDecoder;/const { u8aToString } = require('\''@polkadot\/util'\'');/g' $SRC
+sed -i -e 's/const { TextDecoder } = require(String.raw`util`);/const { u8aToString } = require('\''@polkadot\/util'\'');/g' $SRC
 
 # TextDecoder is not available on RN, so use the @polkadot/util replacement (with polyfill)
 sed -i -e 's/let cachedTextDecoder = new /\/\/ let cachedTextDecoder = new /g' $SRC
@@ -118,26 +118,16 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-const asm = null; // require('./schnorrkel_js_asm');
-const bytes = require('./schnorrkel_js_wasm');
-const schnorrkel = require('./schnorrkel_js');
+const path = require('path').join(__dirname, 'schnorrkel_js_bg.wasm');
+const bytes = require('fs').readFileSync(path);
+let imports = {};
+imports['./schnorrkel_js.js'] = require('./schnorrkel_js.js');
 
+const wasmModule = new WebAssembly.Module(bytes);
+const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
+module.exports = wasmInstance.exports;
 module.exports = async function createExportPromise () {
-  const imports = {
-    './schnorrkel_js': schnorrkel
-  };
-
-  if (!WebAssembly) {
-    return asm;
-  }
-
-  try {
-    const { instance } = await WebAssembly.instantiate(bytes, imports);
-
-    return instance.exports;
-  } catch (error) {
-    return asm;
-  }
+  return wasmInstance.exports;
 }
 " > $BGJ
 

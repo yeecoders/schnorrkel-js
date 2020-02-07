@@ -13,6 +13,12 @@ A fork of [@parity/schnorrkel-js](https://github.com/polkadot-js/schnorrkel-js/t
 - TextDecoder is polyfilled by using the version from `@polkadot/util` (consistent support, alos on React Native)
 - Polyfill for crypto functions that are not available in some environments (e.g. Jest & React Native)
 
+## requirements
+ - rustup 1.20.2 (13979c968 2019-10-16)
+ - rustc 1.41.0-nightly (99b89533d 2019-12-16)
+ - wasm-pack 0.9.0
+ - wasm-opt version 90 (version_90-66-g716813059)
+
 ## development
 
 1. Build can be done via `./build.sh`

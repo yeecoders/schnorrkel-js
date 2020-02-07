@@ -92,8 +92,8 @@ pub fn derive_keypair_soft(pair: &[u8], cc: &[u8]) -> Vec<u8> {
 ///
 /// returned vector is the derived publicKey as a array of 32 bytes
 #[wasm_bindgen]
-pub fn derive_public_soft(public: &[u8], cc: &[u8]) -> Vec<u8> {
-	create_public(public)
+pub fn derive_public_soft(public_key: &[u8], cc: &[u8]) -> Vec<u8> {
+	create_public(public_key)
 		.derived_key_simple(create_cc(cc), &[]).0
 		.to_bytes().to_vec()
 }
@@ -122,9 +122,9 @@ pub fn keypair_from_seed(seed: &[u8]) -> Vec<u8> {
 ///
 /// * returned vector is the signature consisting of 64 bytes.
 #[wasm_bindgen]
-pub fn sign(public: &[u8], secret: &[u8], message: &[u8]) -> Vec<u8> {
+pub fn sign(public_key: &[u8], secret: &[u8], message: &[u8]) -> Vec<u8> {
 	create_secret(secret)
-		.sign_simple(SIGNING_CTX, message, &create_public(public))
+		.sign_simple(SIGNING_CTX, message, &create_public(public_key))
 		.to_bytes()
 		.to_vec()
 }
@@ -135,13 +135,13 @@ pub fn sign(public: &[u8], secret: &[u8], message: &[u8]) -> Vec<u8> {
 /// * message: Arbitrary length UIntArray
 /// * pubkey: UIntArray with 32 element
 #[wasm_bindgen]
-pub fn verify(signature: &[u8], message: &[u8], public: &[u8]) -> bool {
+pub fn verify(signature: &[u8], message: &[u8], public_key: &[u8]) -> bool {
 	let signature = match Signature::from_bytes(signature) {
 		Ok(signature) => signature,
 		Err(_) => return false
 	};
 
-	create_public(public)
+	create_public(public_key)
 		.verify_simple(SIGNING_CTX, message, &signature)
 }
 
