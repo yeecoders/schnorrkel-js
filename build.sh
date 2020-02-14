@@ -41,7 +41,7 @@ rm -rf ./pkg
 
 # build new via nightly & wasm-pack
 echo "*** Building WASM output"
-rustup run nightly wasm-pack build --release --scope polkadot --target nodejs
+rustup run nightly wasm-pack build --release --scope yeecoders --target nodejs
 
 # optimise
 echo "*** Optimising WASM output"
@@ -118,16 +118,26 @@ export function waitReady(): Promise<boolean>;
 
 # create the init promise handler
 echo "
-const path = require('path').join(__dirname, 'schnorrkel_js_bg.wasm');
-const bytes = require('fs').readFileSync(path);
-let imports = {};
-imports['./schnorrkel_js.js'] = require('./schnorrkel_js.js');
+const asm = null; // require('./schnorrkel_js_asm');
+const bytes = require('./schnorrkel_js_wasm');
+const schnorrkel = require('./schnorrkel_js');
 
-const wasmModule = new WebAssembly.Module(bytes);
-const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
-module.exports = wasmInstance.exports;
 module.exports = async function createExportPromise () {
-  return wasmInstance.exports;
+  const imports = {
+    './schnorrkel_js.js': schnorrkel
+  };
+
+  if (!WebAssembly) {
+    return asm;
+  }
+
+  try {
+    const { instance } = await WebAssembly.instantiate(bytes, imports);
+
+    return instance.exports;
+  } catch (error) {
+    return asm;
+  }
 }
 " > $BGJ
 

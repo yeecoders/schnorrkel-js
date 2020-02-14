@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "schnorrkel-js"
-version = "0.2.0-12"
+version = "0.2.0-16"
 dependencies = [
  "hex-literal 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
